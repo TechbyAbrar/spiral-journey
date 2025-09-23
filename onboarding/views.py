@@ -17,77 +17,81 @@ from django.db import transaction
 from .models import Question, UserAnswer
 from .serializers import QuestionSerializer, UserAnswerSerializer
 
-
+from account.utils import success_response, error_response
 
 class UserDiscoveryView(APIView):
+    """Create, update, or retrieve discovery source for the authenticated user."""
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
     def post(self, request):
-        """Create or update discovery source for the authenticated user."""
         serializer = UserDiscoverySerializer(
             data=request.data, context={"request": request}
         )
         if serializer.is_valid():
             discovery = serializer.save()
-            return Response(
-                {
-                    "success": True,
-                    "message": "Discovery source saved successfully.",
-                    "data": UserDiscoverySerializer(discovery).data,
-                },
-                status=status.HTTP_200_OK,
+            return success_response(
+                "Discovery source saved successfully",
+                UserDiscoverySerializer(discovery).data,
+                status_code=status.HTTP_200_OK,
             )
-        return Response(
-            {"success": False, "message": "Invalid data.", "errors": serializer.errors},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+        return error_response("Invalid data", serializer.errors)
 
     def get(self, request):
-        """Retrieve current user’s discovery source."""
         try:
             discovery = request.user.discovery
-            serializer = UserDiscoverySerializer(discovery)
-            return Response(
-                {"success": True, "data": serializer.data}, status=status.HTTP_200_OK
+            return success_response(
+                "Discovery source retrieved",
+                UserDiscoverySerializer(discovery).data,
             )
         except UserDiscovery.DoesNotExist:
-            return Response(
-                {"success": False, "message": "No discovery source set."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return error_response("No discovery source set.", status_code=status.HTTP_404_NOT_FOUND)
 
 
 class QuestionListView(APIView):
-    """List all questions for the survey"""
+    """List all questions OR create a new question (admin only)."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         questions = Question.objects.all().order_by("id")
         serializer = QuestionSerializer(questions, many=True)
-        return Response({"success": True, "data": serializer.data}, status=status.HTTP_200_OK)
+        return success_response("Questions retrieved successfully", serializer.data)
+
+    @transaction.atomic
+    def post(self, request):
+        if not request.user.is_staff:
+            return error_response("Permission denied", status_code=status.HTTP_403_FORBIDDEN)
+
+        serializer = QuestionSerializer(data=request.data)
+        if serializer.is_valid():
+            question = serializer.save()
+            return success_response(
+                "Question created successfully",
+                QuestionSerializer(question).data,
+                status_code=status.HTTP_201_CREATED,
+            )
+        return error_response("Invalid data", serializer.errors)
 
 
 class SubmitAnswerView(APIView):
-    """Submit or update an answer"""
+    """Submit or update an answer for a question."""
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
     def post(self, request):
         serializer = UserAnswerSerializer(data=request.data)
         if serializer.is_valid():
-            question_id = serializer.validated_data["question"].id
+            question = serializer.validated_data["question"]
             answer = serializer.validated_data["answer"]
 
             user_answer, _ = UserAnswer.objects.update_or_create(
                 user=request.user,
-                question_id=question_id,
+                question=question,
                 defaults={"answer": answer},
             )
-
-            return Response(
-                {"success": True, "message": "Answer saved", "data": UserAnswerSerializer(user_answer).data},
-                status=status.HTTP_201_CREATED,
+            return success_response(
+                "Answer saved successfully",
+                UserAnswerSerializer(user_answer).data,
+                status_code=status.HTTP_201_CREATED,
             )
-
-        return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        return error_response("Invalid data", serializer.errors)

@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'account',
     'onboarding',
     'privacy_policy',
+    'spiral_journey',
     
 ]
 

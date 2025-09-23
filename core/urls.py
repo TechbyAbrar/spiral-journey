@@ -16,11 +16,18 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('v1/account/', include('account.urls')),  # Include account app URLs
     path('v1/onboarding/', include('onboarding.urls')),  # Include onboarding app URLs
     path('v1/privacy-policy/', include('privacy_policy.urls')),  # Include privacy policy app URLs
-    
+    path('v1/spiral-journey/', include('spiral_journey.urls')),  # Include spiral journey app URLs
 ]
+
+# Serve static and media only in development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
