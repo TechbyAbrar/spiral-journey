@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import SpiralListCreateView, SpiralDetailView, SpiralDayView
+from .views import SpiralListCreateView, SpiralDetailView, SpiralDayView, SpiralReflectionView
 
 urlpatterns = [
     path("spirals/", SpiralListCreateView.as_view(), name="spiral-list-create"),
@@ -8,4 +8,5 @@ urlpatterns = [
     path("spirals/<int:spiral_id>/days/<int:day_id>/", SpiralDayView.as_view(), name="spiral-day-create"),
     
     path("spirals/<int:spiral_id>/days/<int:day_id>/", SpiralDayView.as_view(), name="spiral-day-detail"),
+    path("spiral-reflections/", SpiralReflectionView.as_view(), name="spiral-reflection-create"),
 ]

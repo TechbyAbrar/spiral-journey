@@ -43,3 +43,18 @@ class SpiralDay(TimeStampedModel):
 
     def __str__(self):
         return f"{self.spiral.title} - Day {self.day_number}"
+    
+    
+
+class SpiralReflection(TimeStampedModel):
+    """User's reflection for a specific day in a spiral"""
+    spiral = models.ForeignKey(Spiral, on_delete=models.CASCADE, related_name="reflections")
+    spiral_day = models.ForeignKey(SpiralDay, on_delete=models.CASCADE, related_name="reflections")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="spiral_reflections")
+    text_response = models.TextField()
+
+    class Meta:
+        unique_together = ("spiral_day", "user")  # each user can only reflect once per day
+
+    def __str__(self):
+        return f"Reflection by {self.user.username} on {self.spiral.title} - Day {self.spiral_day.day_number}"

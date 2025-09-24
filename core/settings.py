@@ -176,8 +176,8 @@ from datetime import timedelta
 SIMPLE_JWT = {
     "USER_ID_FIELD": "user_id",  # use your PK field
     "USER_ID_CLAIM": "user_id",  # key in JWT payload
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 

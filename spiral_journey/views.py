@@ -2,11 +2,12 @@ from django.db import transaction
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.response import Response
-from .serializers import SpiralSerializer, SpiralDaySerializer
+from .serializers import SpiralSerializer, SpiralDaySerializer, SpiralReflectionSerializer
 from .pagination import SpiralPagination
-from .services import SpiralService, SpiralDayService
+from .services import SpiralService, SpiralDayService, SpiralReflectionService
 from account.utils import success_response, error_response
-
+from django.shortcuts import get_object_or_404
+from .models import SpiralDay
 
 class SpiralListCreateView(APIView):
     """Create or List all Spirals"""
@@ -121,4 +122,25 @@ class SpiralDayView(APIView):
         return success_response(
             message="Spiral day deleted successfully",
             status_code=status.HTTP_204_NO_CONTENT,
+        )
+
+
+class SpiralReflectionView(APIView):
+    @transaction.atomic
+    def post(self, request):
+        serializer = SpiralReflectionSerializer(data=request.data)
+        if serializer.is_valid():
+            reflection = SpiralReflectionService.create_reflection(
+                user=request.user,
+                validated_data=serializer.validated_data
+            )
+            return success_response(
+                message="Reflection created successfully",
+                data=SpiralReflectionSerializer(reflection).data,
+                status_code=status.HTTP_201_CREATED,
+            )
+        return error_response(
+            message="Validation error",
+            errors=serializer.errors,
+            status_code=status.HTTP_400_BAD_REQUEST,
         )

@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404
-from .models import Spiral, SpiralDay
+from .models import Spiral, SpiralDay, SpiralReflection
+from rest_framework import serializers
 
 
 class SpiralService:
@@ -64,3 +65,19 @@ class SpiralDayService:
     @staticmethod
     def delete_day(day):
         day.delete()
+
+
+class SpiralReflectionService:
+    @staticmethod
+    def create_reflection(user, validated_data):
+        # Prevent duplicate reflections per day
+        spiral_day = validated_data["spiral_day"]
+        if SpiralReflection.objects.filter(user=user, spiral_day=spiral_day).exists():
+            raise serializers.ValidationError("You have already submitted a reflection for this day.")
+        
+        return SpiralReflection.objects.create(
+            user=user,
+            spiral=validated_data["spiral"],
+            spiral_day=spiral_day,
+            text_response=validated_data["text_response"]
+        )
