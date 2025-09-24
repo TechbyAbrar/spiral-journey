@@ -25,6 +25,7 @@ urlpatterns = [
     path('v1/onboarding/', include('onboarding.urls')),  # Include onboarding app URLs
     path('v1/privacy-policy/', include('privacy_policy.urls')),  # Include privacy policy app URLs
     path('v1/spiral-journey/', include('spiral_journey.urls')),  # Include spiral journey app URLs
+    path('v1/webnote/', include('webnote.urls')),  # Include webnote app URLs
 ]
 
 # Serve static and media only in development

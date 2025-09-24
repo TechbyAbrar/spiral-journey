@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'onboarding',
     'privacy_policy',
     'spiral_journey',
+    "webnote",
     
 ]
 
