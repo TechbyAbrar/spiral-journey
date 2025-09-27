@@ -3,3 +3,8 @@
 2/ onboarding
 3/ privacy_policy
 4/ spiral_journey
+5/ webnote
+6/ monthly_mirror
+7/ dashboard
+8/ administration
+9/ subscription

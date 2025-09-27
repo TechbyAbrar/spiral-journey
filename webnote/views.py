@@ -25,6 +25,7 @@ class NoteCreateView(APIView):
 class NoteListView(APIView):
     def get(self, request):
         notes = NoteService.list_notes(user=request.user)
+        # print(request.user)
         serializer = NoteSerializer(notes, many=True)
         return success_response(
             message="Notes fetched successfully",

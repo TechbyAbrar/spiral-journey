@@ -53,6 +53,10 @@ INSTALLED_APPS = [
     'privacy_policy',
     'spiral_journey',
     "webnote",
+    "monthly_mirror",
+    "dashboard",
+    'administration',
+    'subscription',
     
 ]
 

@@ -21,11 +21,15 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('v1/account/', include('account.urls')),  # Include account app URLs
-    path('v1/onboarding/', include('onboarding.urls')),  # Include onboarding app URLs
-    path('v1/privacy-policy/', include('privacy_policy.urls')),  # Include privacy policy app URLs
-    path('v1/spiral-journey/', include('spiral_journey.urls')),  # Include spiral journey app URLs
-    path('v1/webnote/', include('webnote.urls')),  # Include webnote app URLs
+    path('v1/account/', include('account.urls')),
+    path('v1/onboarding/', include('onboarding.urls')),  
+    path('v1/privacy-policy/', include('privacy_policy.urls')), 
+    path('v1/spiral-journey/', include('spiral_journey.urls')), 
+    path('v1/webnote/', include('webnote.urls')),  
+    path('v1/monthly-mirror/', include('monthly_mirror.urls')), 
+    path('v1/dashboard/', include('dashboard.urls')),
+    path('v1/administration/', include('administration.urls')),
+    path('v1/subscription/', include('subscription.urls')),
 ]
 
 # Serve static and media only in development

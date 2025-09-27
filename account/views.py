@@ -124,6 +124,11 @@ class ResetPasswordView(APIView):
 
 class UpdateProfileView(APIView):
     permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        user = request.user
+        serializer = UserSerializer(user)
+        return success_response("Profile fetched successfully", serializer.data)
 
     @transaction.atomic
     def put(self, request):

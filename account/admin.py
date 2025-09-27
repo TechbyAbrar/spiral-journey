@@ -10,9 +10,8 @@ class UserAuthAdmin(UserAdmin):
     # Fields to display in the user list
     list_display = (
         "user_id", "email", "full_name", "username",
-        "is_verified", "is_active", "is_staff", "is_superuser",
-        "is_subscribed", "created_at"
+        "is_verified", "is_active", "is_staff", "is_superuser", "created_at"
     )
-    list_filter = ("is_verified", "is_active", "is_staff", "is_superuser", "is_subscribed")
+    list_filter = ("is_verified", "is_active", "is_staff", "is_superuser")
     search_fields = ("email", "full_name", "username", "contanct_no", "country")
     ordering = ("-created_at",)

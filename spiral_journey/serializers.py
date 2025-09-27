@@ -6,8 +6,8 @@ class SpiralDaySerializer(serializers.ModelSerializer):
     class Meta:
         model = SpiralDay
         fields = [
-            "id", "day_number", "journal_prompt",
-            "voice_drop", "is_active", "created_at", "updated_at",
+            "id", "day_number", "journal_prompt", 'voice_title',
+            "voice_drop", "is_active", 'is_completed', "created_at", "updated_at",
         ]
 
 
@@ -38,3 +38,12 @@ class SpiralReflectionSerializer(serializers.ModelSerializer):
         if attrs["spiral_day"].spiral.id != attrs["spiral"].id:
             raise serializers.ValidationError("The spiral_day does not belong to the given spiral.")
         return attrs
+
+
+
+from .models import Soundscape
+
+class SoundscapeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Soundscape
+        fields = ["id", "title", "description", "audio_file", "duration", "mood", "created_at", "updated_at"]

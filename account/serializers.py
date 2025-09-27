@@ -16,8 +16,10 @@ from .models import UserAuth
 from .utils import generate_tokens_for_user, validate_google_token, validate_facebook_token
 import jwt
 
+from subscription.models import UserSubscription
 
 class UserSerializer(serializers.ModelSerializer):
+    is_subscribed = serializers.SerializerMethodField()
     class Meta:
         model = User
         fields = [
@@ -31,18 +33,22 @@ class UserSerializer(serializers.ModelSerializer):
             'is_active',
             'is_subscribed', 'created_at', 'updated_at',
         ]
+        
+    def get_is_subscribed(self, obj):
+    # Only one user (request.user) -> single query
+        return UserSubscription.objects.filter(user=obj, is_active=True).exists()
 
 
 class SignupSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=8)
+    password = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
         fields = ['user_id', 'full_name', 'email', 'password']
 
-    def validate_password(self, value):
-        validate_password(value)
-        return value
+    # def validate_password(self, value):
+    #     validate_password(value)
+    #     return value
 
     @transaction.atomic
     def create(self, validated_data):
@@ -147,8 +153,8 @@ class ForgetPasswordSerializer(serializers.Serializer):
 
 
 class ResetPasswordSerializer(serializers.Serializer):
-    new_password = serializers.CharField(write_only=True, min_length=8)
-    confirm_password = serializers.CharField(write_only=True, min_length=8)
+    new_password = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
         new_password = attrs.get("new_password")
