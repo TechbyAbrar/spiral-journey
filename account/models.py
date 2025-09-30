@@ -15,7 +15,7 @@ class UserAuth(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=100, unique=True)
     
     full_name = models.CharField(max_length=30)
-    username = models.CharField(max_length=30, unique=True)
+    username = models.CharField(max_length=30, unique=False, blank=True, null=True)
     
     profile_pic = models.ImageField(
         upload_to='profile/', 
