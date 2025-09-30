@@ -30,6 +30,7 @@ urlpatterns = [
     path('v1/dashboard/', include('dashboard.urls')),
     path('v1/administration/', include('administration.urls')),
     path('v1/subscription/', include('subscription.urls')),
+    path('v1/notifications/', include('notification.urls')),  # Notification URLs
 ]
 
 # Serve static and media only in development

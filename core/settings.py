@@ -46,9 +46,11 @@ INSTALLED_APPS = [
     # Third-party
     "rest_framework",
     "corsheaders",
+    "notification.apps.NotificationConfig",
+    "account.apps.AccountConfig",  # ensure signals loaded
     
     # Local
-    'account',
+    # 'account',
     'onboarding',
     'privacy_policy',
     'spiral_journey',
@@ -57,6 +59,7 @@ INSTALLED_APPS = [
     "dashboard",
     'administration',
     'subscription',
+    # 'notification',
     
 ]
 

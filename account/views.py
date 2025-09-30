@@ -122,13 +122,33 @@ class ResetPasswordView(APIView):
 
 
 
+# class UpdateProfileView(APIView):
+#     permission_classes = [IsAuthenticated]
+    
+#     def get(self, request):
+#         user = request.user
+#         serializer = UserSerializer(user)
+#         return success_response("Profile fetched successfully", serializer.data)
+
+#     @transaction.atomic
+#     def put(self, request):
+#         user = request.user
+#         serializer = UserSerializer(user, data=request.data, partial=True)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return success_response("Profile updated successfully", serializer.data)
+#         return error_response("Profile update failed", serializer.errors)
+
+from rest_framework.parsers import MultiPartParser, FormParser
+
 class UpdateProfileView(APIView):
     permission_classes = [IsAuthenticated]
-    
+    parser_classes = [MultiPartParser, FormParser]
+
     def get(self, request):
         user = request.user
         serializer = UserSerializer(user)
-        return success_response("Profile fetched successfully", serializer.data)
+        return success_response(data=serializer.data, message="Profile fetched successfully")
 
     @transaction.atomic
     def put(self, request):
@@ -136,8 +156,8 @@ class UpdateProfileView(APIView):
         serializer = UserSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return success_response("Profile updated successfully", serializer.data)
-        return error_response("Profile update failed", serializer.errors)
+            return success_response(data=serializer.data, message="Profile updated successfully")
+        return error_response(message="Profile update failed", data=serializer.errors)
 
 
 class SpecificUserView(APIView):
