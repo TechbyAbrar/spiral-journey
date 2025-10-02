@@ -6,6 +6,7 @@ from administration.serializers import AdminCreateSerializer, AdminSerializer
 from administration.models import AdminUser
 from account.utils import success_response, error_response
 
+from django.db import IntegrityError
 
 class AdminCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -19,14 +20,34 @@ class AdminCreateView(APIView):
 
         serializer = AdminCreateSerializer(data=request.data)
         if serializer.is_valid():
-            admin = AdminService.create_admin(
-                serializer.validated_data, role=serializer.validated_data["role"]
-            )
-            return success_response(
-                message="Admin/Staff created successfully",
-                data=AdminSerializer(admin).data,
-                status_code=status.HTTP_201_CREATED,
-            )
+            try:
+                admin = AdminService.create_admin(
+                    serializer.validated_data, role=serializer.validated_data["role"]
+                )
+                return success_response(
+                    message="Admin/Staff created successfully",
+                    data=AdminSerializer(admin).data,
+                    status_code=status.HTTP_201_CREATED,
+                )
+            except IntegrityError as e:
+                # Check if it's email or username duplication
+                error_msg = str(e)
+                if "email" in error_msg:
+                    return error_response(
+                        message="Email already exists",
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
+                elif "username" in error_msg:
+                    return error_response(
+                        message="Username already exists",
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
+                return error_response(
+                    message="Integrity error",
+                    errors=str(e),
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+
         return error_response(
             message="Invalid data", errors=serializer.errors, status_code=status.HTTP_400_BAD_REQUEST
         )

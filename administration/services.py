@@ -2,6 +2,7 @@
 from django.shortcuts import get_object_or_404
 from account.models import UserAuth
 from administration.models import AdminUser
+from .serializers import AdminSerializer
 
 class AdminService:
     @staticmethod
@@ -23,17 +24,6 @@ class AdminService:
     @staticmethod
     def update_admin(admin_id, validated_data):
         admin = get_object_or_404(AdminUser, pk=admin_id)
-
-        if "is_active" in validated_data:
-            admin.is_active = validated_data["is_active"]
-            admin.user.is_active = validated_data["is_active"]
-            admin.user.save()
-
-        if "role" in validated_data:
-            admin.role = validated_data["role"]
-            # Sync superuser flag
-            admin.user.is_superuser = (admin.role == "superadmin")
-            admin.user.save()
-
-        admin.save()
-        return admin
+        serializer = AdminSerializer(instance=admin, data=validated_data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        return serializer.save()
