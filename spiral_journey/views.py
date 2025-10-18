@@ -1,196 +1,3 @@
-# from django.db import transaction
-# from rest_framework.views import APIView
-# from rest_framework import status
-# from rest_framework.response import Response
-# from .serializers import SpiralSerializer, SpiralDaySerializer, SpiralReflectionSerializer
-# from .pagination import SpiralPagination
-# from .services import SpiralService, SpiralDayService, SpiralReflectionService
-# from account.utils import success_response, error_response
-# from django.shortcuts import get_object_or_404
-# from .models import SpiralDay
-# from rest_framework.permissions import IsAuthenticated
-# from rest_framework.exceptions import PermissionDenied
-
-
-# # class SpiralListCreateView(APIView):
-# #     """Create or List all Spirals"""
-
-# #     def get(self, request):
-# #         spirals = SpiralService.list_spirals(user=request.user)
-# #         paginator = SpiralPagination()
-# #         paginated_spirals = paginator.paginate_queryset(spirals, request)
-# #         serializer = SpiralSerializer(paginated_spirals, many=True)
-
-# #         # Build paginated response manually
-# #         return Response({
-# #             "count": paginator.page.paginator.count,
-# #             "total_pages": paginator.page.paginator.num_pages,
-# #             "current_page": paginator.page.number,
-# #             "next": paginator.get_next_link(),
-# #             "previous": paginator.get_previous_link(),
-# #             "message": "Spirals retrieved successfully",
-# #             "results": serializer.data,
-# #         })
-
-# #     @transaction.atomic
-# #     def post(self, request):
-# #         serializer = SpiralSerializer(data=request.data)
-# #         if serializer.is_valid():
-# #             spiral = SpiralService.create_spiral(request.user, serializer.validated_data)
-# #             return success_response(
-# #                 message="Spiral created successfully",
-# #                 data=SpiralSerializer(spiral).data,
-# #                 status_code=status.HTTP_201_CREATED,
-# #             )
-# #         return error_response(
-# #             message="Validation error",
-# #             errors=serializer.errors,
-# #             status_code=status.HTTP_400_BAD_REQUEST,
-# #         )
-
-
-
-# class SpiralListCreateView(APIView):
-#     """List spirals for all users, but allow creation only for staff/admin"""
-
-#     permission_classes = [IsAuthenticated]
-
-#     def get(self, request):
-#         spirals = SpiralService.list_spirals()
-#         paginator = SpiralPagination()
-#         paginated_spirals = paginator.paginate_queryset(spirals, request)
-#         serializer = SpiralSerializer(paginated_spirals, many=True)
-
-#         return Response({
-#             "count": paginator.page.paginator.count,
-#             "total_pages": paginator.page.paginator.num_pages,
-#             "current_page": paginator.page.number,
-#             "next": paginator.get_next_link(),
-#             "previous": paginator.get_previous_link(),
-#             "message": "Spirals retrieved successfully",
-#             "results": serializer.data,
-#         }, status=status.HTTP_200_OK)
-
-#     @transaction.atomic
-#     def post(self, request):
-#         # Restrict to staff/admin only
-#         if not (request.user.is_staff or request.user.is_superuser):
-#             raise PermissionDenied("Only staff or admin users can create spirals.")
-
-#         serializer = SpiralSerializer(data=request.data)
-#         if serializer.is_valid():
-#             spiral = SpiralService.create_spiral(request.user, serializer.validated_data)
-#             return success_response(
-#                 message="Spiral created successfully",
-#                 data=SpiralSerializer(spiral).data,
-#                 status_code=status.HTTP_201_CREATED,
-#             )
-#         return error_response(
-#             message="Validation error",
-#             errors=serializer.errors,
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#         )
-
-# class SpiralDetailView(APIView):
-#     """Retrieve, Update or Delete a Spiral"""
-
-#     def get(self, request, pk):
-#         spiral = SpiralService.get_spiral(pk, request.user)
-#         return success_response(data=SpiralSerializer(spiral).data)
-
-#     @transaction.atomic
-#     def put(self, request, pk):
-#         spiral = SpiralService.get_spiral(pk, request.user)
-#         serializer = SpiralSerializer(spiral, data=request.data, partial=True)
-#         if serializer.is_valid():
-#             updated_spiral = SpiralService.update_spiral(spiral, serializer.validated_data)
-#             return success_response(
-#                 message="Spiral updated successfully",
-#                 data=SpiralSerializer(updated_spiral).data,
-#             )
-#         return error_response(
-#             message="Validation error",
-#             errors=serializer.errors,
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#         )
-
-#     @transaction.atomic
-#     def delete(self, request, pk):
-#         spiral = SpiralService.get_spiral(pk, request.user)
-#         SpiralService.delete_spiral(spiral)
-#         return success_response(
-#             message="Spiral deleted successfully",
-#             status_code=status.HTTP_204_NO_CONTENT,
-#         )
-
-
-# class SpiralDayView(APIView):
-#     """CRUD for Spiral Days"""
-
-#     @transaction.atomic
-#     def post(self, request, spiral_id):
-#         spiral = SpiralService.get_spiral(spiral_id, request.user)
-#         serializer = SpiralDaySerializer(data=request.data)
-#         if serializer.is_valid():
-#             day = SpiralDayService.create_day(spiral, serializer.validated_data)
-#             return success_response(
-#                 message="Spiral day created successfully",
-#                 data=SpiralDaySerializer(day).data,
-#                 status_code=status.HTTP_201_CREATED,
-#             )
-#         return error_response(
-#             message="Validation error",
-#             errors=serializer.errors,
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#         )
-
-#     @transaction.atomic
-#     def put(self, request, spiral_id, day_id):
-#         day = SpiralDayService.get_day(spiral_id, day_id, request.user)
-#         serializer = SpiralDaySerializer(day, data=request.data, partial=True)
-#         if serializer.is_valid():
-#             updated_day = SpiralDayService.update_day(day, serializer.validated_data)
-#             return success_response(
-#                 message="Spiral day updated successfully",
-#                 data=SpiralDaySerializer(updated_day).data,
-#             )
-#         return error_response(
-#             message="Validation error",
-#             errors=serializer.errors,
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#         )
-
-#     @transaction.atomic
-#     def delete(self, request, spiral_id, day_id):
-#         day = SpiralDayService.get_day(spiral_id, day_id, request.user)
-#         SpiralDayService.delete_day(day)
-#         return success_response(
-#             message="Spiral day deleted successfully",
-#             status_code=status.HTTP_204_NO_CONTENT,
-#         )
-
-
-# class SpiralReflectionView(APIView):
-#     @transaction.atomic
-#     def post(self, request):
-#         serializer = SpiralReflectionSerializer(data=request.data)
-#         if serializer.is_valid():
-#             reflection = SpiralReflectionService.create_reflection(
-#                 user=request.user,
-#                 validated_data=serializer.validated_data
-#             )
-#             return success_response(
-#                 message="Reflection created successfully",
-#                 data=SpiralReflectionSerializer(reflection).data,
-#                 status_code=status.HTTP_201_CREATED,
-#             )
-#         return error_response(
-#             message="Validation error",
-#             errors=serializer.errors,
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#         )
-
-
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
@@ -205,78 +12,61 @@ from .serializers import (
     SpiralReflectionSerializer
 )
 from .pagination import SpiralPagination
-from .services import SpiralService, SpiralDayService, SpiralReflectionService
+from .services import SpiralService, SpiralReflectionService
 from account.utils import success_response, error_response
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 
 class SpiralListCreateView(APIView):
-    """List spirals (all users) / Create spirals (staff/admin only)."""
     permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
 
+    @transaction.atomic
     def get(self, request):
         spirals = SpiralService.list_spirals()
-        paginator = SpiralPagination()
-        paginated_spirals = paginator.paginate_queryset(spirals, request)
-        serializer = SpiralSerializer(paginated_spirals, many=True)
-
-        return Response({
-            "count": paginator.page.paginator.count,
-            "total_pages": paginator.page.paginator.num_pages,
-            "current_page": paginator.page.number,
-            "next": paginator.get_next_link(),
-            "previous": paginator.get_previous_link(),
-            "message": "Spirals retrieved successfully",
-            "results": serializer.data,
-        }, status=status.HTTP_200_OK)
+        serializer = SpiralSerializer(spirals, many=True)
+        return success_response("Spirals retrieved", serializer.data)
 
     @transaction.atomic
     def post(self, request):
-        # Restrict to staff/admin only
         if not (request.user.is_staff or request.user.is_superuser):
             raise PermissionDenied("Only staff or admin users can create spirals.")
 
-        serializer = SpiralSerializer(data=request.data)
+        serializer = SpiralSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             spiral = SpiralService.create_spiral(request.user, serializer.validated_data)
-            return success_response(
-                message="Spiral created successfully",
-                data=SpiralSerializer(spiral).data,
-                status_code=status.HTTP_201_CREATED,
-            )
-        return error_response(
-            message="Validation error",
-            errors=serializer.errors,
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
+            return success_response("Spiral created successfully", SpiralSerializer(spiral).data, status.HTTP_201_CREATED)
 
+        return error_response("Validation error", serializer.errors, status.HTTP_400_BAD_REQUEST)
 
 class SpiralDetailView(APIView):
-    """Retrieve (all users), Update/Delete (staff/admin only)."""
     permission_classes = [IsAuthenticated]
-
-    def get(self, request, pk):
-        spiral = SpiralService.get_spiral(pk)
-        return success_response(data=SpiralSerializer(spiral).data)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     @transaction.atomic
-    def put(self, request, pk):
+    def get(self, request, pk):
+        spiral = SpiralService.get_spiral(pk)
+        serializer = SpiralSerializer(spiral)
+        return success_response(data=serializer.data)
+
+    @transaction.atomic
+    def patch(self, request, pk):
+        """Partial update — update spiral info or selected day(s)."""
         spiral = SpiralService.get_spiral(pk)
 
         if not (request.user.is_staff or request.user.is_superuser):
             raise PermissionDenied("Only staff or admin users can update spirals.")
 
-        serializer = SpiralSerializer(spiral, data=request.data, partial=True)
-        if serializer.is_valid():
-            updated_spiral = SpiralService.update_spiral(spiral, serializer.validated_data)
-            return success_response(
-                message="Spiral updated successfully",
-                data=SpiralSerializer(updated_spiral).data,
-            )
-        return error_response(
-            message="Validation error",
-            errors=serializer.errors,
-            status_code=status.HTTP_400_BAD_REQUEST,
+        serializer = SpiralSerializer(
+            spiral, data=request.data, partial=True, context={"request": request}
         )
+
+        if serializer.is_valid():
+            updated = SpiralService.update_spiral(
+                spiral, serializer.validated_data, partial=True
+            )
+            return success_response("Spiral updated successfully", SpiralSerializer(updated).data)
+        return error_response("Validation error", serializer.errors, status.HTTP_400_BAD_REQUEST)
 
     @transaction.atomic
     def delete(self, request, pk):
@@ -286,67 +76,83 @@ class SpiralDetailView(APIView):
             raise PermissionDenied("Only staff or admin users can delete spirals.")
 
         SpiralService.delete_spiral(spiral)
-        return success_response(
-            message="Spiral deleted successfully",
-            status_code=status.HTTP_204_NO_CONTENT,
-        )
+        return success_response("Spiral deleted", status_code=status.HTTP_204_NO_CONTENT)
 
 
-class SpiralDayView(APIView):
-    """CRUD for Spiral Days (staff/admin only)."""
+
+
+# spiral day create api
+class AdminSpiralDayCreateView(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     @transaction.atomic
     def post(self, request, spiral_id):
+        """Admin can create a new Spiral Day."""
         if not (request.user.is_staff or request.user.is_superuser):
-            raise PermissionDenied("Only staff or admin users can create spiral days.")
+            raise PermissionDenied("Only admin users can create spiral days.")
 
-        spiral = SpiralService.get_spiral(spiral_id)
-        serializer = SpiralDaySerializer(data=request.data)
-        if serializer.is_valid():
-            day = SpiralDayService.create_day(spiral, serializer.validated_data)
-            return success_response(
-                message="Spiral day created successfully",
-                data=SpiralDaySerializer(day).data,
-                status_code=status.HTTP_201_CREATED,
+        serializer = AdminSpiralDaySerializer(data=request.data)
+        if not serializer.is_valid():
+            return error_response("Validation error", serializer.errors, status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Inject spiral_id into validated data
+            validated_data = serializer.validated_data
+            validated_data["spiral_id"] = spiral_id
+
+            spiral_day = SpiralService.admin_create_spiral_day(
+                spiral_id=spiral_id,
+                validated_data=validated_data
             )
-        return error_response(
-            message="Validation error",
-            errors=serializer.errors,
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
+            return success_response(
+                message="Spiral day created successfully.",
+                data=AdminSpiralDaySerializer(spiral_day).data,
+                status_code=status.HTTP_201_CREATED
+            )
+        except Exception as e:
+            return error_response("Failed to create spiral day", str(e), status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+
+from .serializers import AdminSpiralDaySerializer
+class AdminSpiralDayDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     @transaction.atomic
-    def put(self, request, spiral_id, day_id):
+    def get(self, request, spiral_id, day_number):
+        """Admin can fetch a specific spiral day with all details."""
         if not (request.user.is_staff or request.user.is_superuser):
-            raise PermissionDenied("Only staff or admin users can update spiral days.")
+            raise PermissionDenied("Only admin users can access this endpoint.")
 
-        day = SpiralDayService.get_day(spiral_id, day_id)
-        serializer = SpiralDaySerializer(day, data=request.data, partial=True)
-        if serializer.is_valid():
-            updated_day = SpiralDayService.update_day(day, serializer.validated_data)
-            return success_response(
-                message="Spiral day updated successfully",
-                data=SpiralDaySerializer(updated_day).data,
-            )
-        return error_response(
-            message="Validation error",
-            errors=serializer.errors,
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
+        spiral_day = SpiralService.get_spiral_day(spiral_id, day_number)
+        serializer = AdminSpiralDaySerializer(spiral_day)
+        return success_response(data=serializer.data)
 
     @transaction.atomic
-    def delete(self, request, spiral_id, day_id):
+    def patch(self, request, spiral_id, day_number):
+        """Admin can update full spiral day (title, prompt, voice, etc)."""
         if not (request.user.is_staff or request.user.is_superuser):
-            raise PermissionDenied("Only staff or admin users can delete spiral days.")
+            raise PermissionDenied("Only admin users can update spiral days.")
 
-        day = SpiralDayService.get_day(spiral_id, day_id)
-        SpiralDayService.delete_day(day)
-        return success_response(
-            message="Spiral day deleted successfully",
-            status_code=status.HTTP_204_NO_CONTENT,
-        )
+        spiral_day = SpiralService.get_spiral_day(spiral_id, day_number)
+        serializer = AdminSpiralDaySerializer(spiral_day, data=request.data, partial=True)
 
+        if serializer.is_valid():
+            updated_day = SpiralService.admin_update_spiral_day(spiral_day, serializer.validated_data)
+            return success_response(
+                "Spiral day updated successfully by admin",
+                AdminSpiralDaySerializer(updated_day).data,
+            )
+        return error_response("Validation error", serializer.errors, status.HTTP_400_BAD_REQUEST)
+
+
+
+
+# parted
 
 class SpiralReflectionView(APIView):
     """Authenticated users can create reflections."""

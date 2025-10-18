@@ -1,85 +1,150 @@
+from typing import List, Dict, Any, Optional
+from django.db import transaction
 from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import ValidationError
 from .models import Spiral, SpiralDay, SpiralReflection
 from rest_framework import serializers
+
+from typing import Any, Dict, List, Optional
+from django.db import transaction
+from django.shortcuts import get_object_or_404
+from django.core.exceptions import ValidationError
+from .models import Spiral, SpiralDay
 
 
 class SpiralService:
     @staticmethod
     def list_spirals():
-        """
-        Get all spirals for all users.
-        (Visible to any authenticated user)
-        """
-        return (
-            Spiral.objects
-            .select_related("user")
-            .prefetch_related("days")
-            .order_by("-created_at")
-        )
+        return Spiral.objects.prefetch_related("days").order_by("-created_at")
 
     @staticmethod
-    def get_spiral(pk):
-        """
-        Retrieve a single spiral.
-        (Permission handled in views: 
-        staff/admin can edit/delete, all users can view)
-        """
-        return get_object_or_404(
-            Spiral.objects.select_related("user").prefetch_related("days"),
-            pk=pk,
-        )
+    def get_spiral(pk: int) -> Spiral:
+        return get_object_or_404(Spiral.objects.prefetch_related("days"), pk=pk)
 
     @staticmethod
-    def create_spiral(user, validated_data):
-        """Create a spiral for the given user (staff/admin only)."""
-        return Spiral.objects.create(user=user, **validated_data)
+    @transaction.atomic
+    def create_spiral(user, validated_data: Dict[str, Any]) -> Spiral:
+        days_data: List[Dict[str, Any]] = validated_data.pop("days", [])
+        spiral = Spiral.objects.create(user=user, **validated_data)
+        SpiralService._bulk_create_or_update_days(spiral, days_data)
+        return Spiral.objects.prefetch_related("days").get(pk=spiral.pk)
+    
 
     @staticmethod
-    def update_spiral(spiral, validated_data):
-        """Update spiral fields safely (staff/admin only)."""
-        for attr, value in validated_data.items():
-            setattr(spiral, attr, value)
+    @transaction.atomic
+    def update_spiral(spiral: Spiral, validated_data: Dict[str, Any], partial: bool = False) -> Spiral:
+        days_data: Optional[List[Dict[str, Any]]] = validated_data.pop("days", None)
+
+        # Update spiral core fields
+        for attr, val in validated_data.items():
+            setattr(spiral, attr, val)
         spiral.save()
-        return spiral
+
+        # Handle day updates
+        if days_data is not None:
+            SpiralService._bulk_create_or_update_days(spiral, days_data)
+
+        return Spiral.objects.prefetch_related("days").get(pk=spiral.pk)
 
     @staticmethod
-    def delete_spiral(spiral):
-        """Delete a spiral (staff/admin only)."""
+    def delete_spiral(spiral: Spiral):
+        for d in spiral.days.all():
+            if d.voice_drop:
+                d.voice_drop.delete(save=False)
         spiral.delete()
 
-
-class SpiralDayService:
     @staticmethod
-    def get_day(spiral_id, day_id):
+    def _bulk_create_or_update_days(spiral: Spiral, days_data: List[Dict[str, Any]]):
+        """Safely update or create SpiralDay entries without breaking unique constraint."""
+        existing_days = {d.day_number: d for d in spiral.days.all()}
+
+        seen_day_numbers = set()
+        for day_dict in days_data:
+            day_number = int(day_dict.get("day_number"))
+            if day_number in seen_day_numbers:
+                raise ValidationError(f"Duplicate day_number: {day_number}")
+            seen_day_numbers.add(day_number)
+
+            journal_prompt = day_dict.get("journal_prompt")
+            voice_title = day_dict.get("voice_title")
+            voice_drop = day_dict.get("voice_drop")
+
+            # Update if exists, else create
+            if day_number in existing_days:
+                day = existing_days[day_number]
+                day.journal_prompt = journal_prompt or day.journal_prompt
+                day.voice_title = voice_title or day.voice_title
+                if voice_drop:
+                    day.voice_drop = voice_drop
+                day.save()
+            else:
+                SpiralDay.objects.create(
+                    spiral=spiral,
+                    day_number=day_number,
+                    journal_prompt=journal_prompt,
+                    voice_title=voice_title,
+                    voice_drop=voice_drop,
+                )
+                
+                
+    @staticmethod
+    def get_spiral_day(spiral_id: int, day_number: int) -> SpiralDay:
+        return get_object_or_404(SpiralDay, spiral_id=spiral_id, day_number=day_number)
+
+    @staticmethod
+    @transaction.atomic
+    def update_spiral_day(spiral_day: SpiralDay, validated_data: Dict[str, Any]) -> SpiralDay:
+        for attr, val in validated_data.items():
+            setattr(spiral_day, attr, val)
+        spiral_day.save()
+        return spiral_day
+
+    @staticmethod
+    @transaction.atomic
+    def admin_update_spiral_day(spiral_day: SpiralDay, validated_data: Dict[str, Any]) -> SpiralDay:
+        # prevent breaking unique constraints
+        if "day_number" in validated_data:
+            new_day_number = validated_data["day_number"]
+            if SpiralDay.objects.filter(
+                spiral=spiral_day.spiral,
+                day_number=new_day_number
+            ).exclude(id=spiral_day.id).exists():
+                raise ValidationError(f"Day number {new_day_number} already exists for this spiral.")
+        
+        for attr, val in validated_data.items():
+            setattr(spiral_day, attr, val)
+        spiral_day.save()
+        return spiral_day
+    
+    @staticmethod
+    @transaction.atomic
+    def admin_create_spiral_day(spiral_id: int, validated_data: Dict[str, Any]) -> SpiralDay:
         """
-        Retrieve a spiral day.
-        (Visible to all authenticated users,
-        staff/admin can edit/delete)
+        Admin can create a new SpiralDay for a given Spiral.
+        Auto-calculates next available day_number if not provided.
         """
-        return get_object_or_404(
-            SpiralDay.objects.select_related("spiral"),
-            id=day_id, spiral__id=spiral_id,
-        )
+        spiral = get_object_or_404(Spiral, pk=spiral_id)
 
-    @staticmethod
-    def create_day(spiral, validated_data):
-        """Create a day inside a spiral (staff/admin only)."""
-        return SpiralDay.objects.create(spiral=spiral, **validated_data)
+        # If day_number not provided, assign next sequential number
+        if not validated_data.get("day_number"):
+            validated_data["day_number"] = (
+                SpiralDay.objects.filter(spiral=spiral).count() + 1
+            )
 
-    @staticmethod
-    def update_day(day, validated_data):
-        """Update a spiral day (staff/admin only)."""
-        for attr, value in validated_data.items():
-            setattr(day, attr, value)
-        day.save()
-        return day
+        day_number = validated_data["day_number"]
 
-    @staticmethod
-    def delete_day(day):
-        """Delete a spiral day (staff/admin only)."""
-        day.delete()
+        # Prevent duplicate day_number for the same spiral
+        if SpiralDay.objects.filter(spiral=spiral, day_number=day_number).exists():
+            raise ValidationError(f"Day number {day_number} already exists for this spiral.")
+
+        spiral_day = SpiralDay.objects.create(spiral=spiral, **validated_data)
+        return spiral_day
 
 
+
+
+
+# Service for handling SpiralReflection logic
 class SpiralReflectionService:
     @staticmethod
     def create_reflection(user, validated_data):

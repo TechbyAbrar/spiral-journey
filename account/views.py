@@ -223,8 +223,6 @@ class DeleteUserView(APIView):
     
     
 # social auth
-
-
 # ---------------------------
 # Google Login View
 # ---------------------------

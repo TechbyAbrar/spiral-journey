@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.conf import settings
 
 User = get_user_model()
 
@@ -13,31 +14,42 @@ class TimeStampedModel(models.Model):
         abstract = True
 
 
-class Spiral(TimeStampedModel):
-    """Represents a journaling spiral"""
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="spirals")
+class Spiral(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="spirals"
+    )
     title = models.CharField(max_length=255, db_index=True)
     description = models.TextField(blank=True)
-    focus_point = models.CharField(max_length=255)
-    duration = models.PositiveIntegerField(default=7)  # days
+    focus_point = models.CharField(max_length=255, blank=True)
+    duration = models.PositiveSmallIntegerField(default=7)  # days
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-created_at",)
 
     def __str__(self):
         return self.title
 
+import os
+from django.utils.text import slugify
 
-class SpiralDay(TimeStampedModel):
-    """Daily prompt inside a spiral"""
+def spiral_voice_upload_path(instance, filename):
+    # Put files under: media/spirals/<spiral_id>/day_<day_number>/<slugified_filename>
+    name, ext = os.path.splitext(filename)
+    safe_name = f"{slugify(name)}{ext}"
+    return f"spirals/{instance.spiral.id}/day_{instance.day_number}/{safe_name}"
+
+class SpiralDay(models.Model):
     spiral = models.ForeignKey(Spiral, on_delete=models.CASCADE, related_name="days")
     day_number = models.PositiveIntegerField()
-    journal_prompt = models.TextField()
+    journal_prompt = models.TextField(blank=True, null=True)
     voice_title = models.CharField(max_length=255, blank=True, null=True)
-    voice_drop = models.FileField(
-        upload_to="spiral_voice_drops/",  # folder inside MEDIA_ROOT
-        blank=True,
-        null=True
-    )
+    voice_drop = models.FileField(upload_to=spiral_voice_upload_path, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     is_completed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ("spiral", "day_number")

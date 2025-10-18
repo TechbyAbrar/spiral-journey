@@ -201,7 +201,6 @@ class VerifyForgetPasswordOTPSerializer(serializers.Serializer):
 
 
 # social auth
-
 class GoogleAuthSerializer(serializers.Serializer):
     id_token = serializers.CharField(required=False)
     email = serializers.EmailField(required=False)
