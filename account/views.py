@@ -198,14 +198,8 @@ class VerifyForgetPasswordOTPView(APIView):
 
 
 # User deletion
-
-
-
 class DeleteUserView(APIView):
-    """
-    Admin-only endpoint to delete a user by user_id.
-    """
-    permission_classes = [IsSuperUserOrReadOnly]
+    permission_classes = [IsAuthenticated]
 
     @transaction.atomic
     def delete(self, request, user_id):
@@ -214,12 +208,27 @@ class DeleteUserView(APIView):
         except User.DoesNotExist:
             return error_response("User not found", status_code=status.HTTP_404_NOT_FOUND)
 
-        # Prevent admin from deleting themselves
-        if user == request.user:
-            return error_response("You cannot delete your own account", status_code=status.HTTP_400_BAD_REQUEST)
+        # Allow only superuser or the user themself
+        if not (request.user.is_superuser or request.user == user):
+            return error_response(
+                "You do not have permission to delete this account.",
+                status_code=status.HTTP_403_FORBIDDEN
+            )
 
+        # Optional: Prevent superuser from deleting their own account (safety)
+        if request.user.is_superuser and user == request.user:
+            return error_response(
+                "Superusers cannot delete their own account.",
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+
+        user_email = user.email
         user.delete()
-        return success_response(f"User {user.email} deleted successfully.", status_code=status.HTTP_200_OK)
+
+        return success_response(
+            f"User {user_email} deleted successfully.",
+            status_code=status.HTTP_200_OK
+        )
     
     
 # social auth
