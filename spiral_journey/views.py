@@ -155,7 +155,6 @@ class AdminSpiralDayDetailView(APIView):
 # parted
 
 class SpiralReflectionView(APIView):
-    """Authenticated users can create reflections."""
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic

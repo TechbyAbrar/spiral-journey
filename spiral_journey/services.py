@@ -146,22 +146,51 @@ class SpiralService:
 
 # Service for handling SpiralReflection logic
 class SpiralReflectionService:
+   
+    # def create_reflection(user, validated_data):
+    #     """
+    #     Allow an authenticated user to create a reflection.
+    #     Enforces uniqueness: one reflection per day per user.
+    #     """
+    #     spiral_day = validated_data["spiral_day"]
+
+    #     if SpiralReflection.objects.filter(user=user, spiral_day=spiral_day).exists():
+    #         raise serializers.ValidationError(
+    #             "You have already submitted a reflection for this day."
+    #         )
+        
+    #     return SpiralReflection.objects.create(
+    #         user=user,
+    #         spiral=validated_data["spiral"],
+    #         spiral_day=spiral_day,
+    #         text_response=validated_data["text_response"]
+    #     )
     @staticmethod
     def create_reflection(user, validated_data):
         """
         Allow an authenticated user to create a reflection.
         Enforces uniqueness: one reflection per day per user.
+        Marks the corresponding SpiralDay as completed.
         """
         spiral_day = validated_data["spiral_day"]
 
+        # Ensure only one reflection per user per day
         if SpiralReflection.objects.filter(user=user, spiral_day=spiral_day).exists():
             raise serializers.ValidationError(
                 "You have already submitted a reflection for this day."
             )
         
-        return SpiralReflection.objects.create(
+        # Create the reflection
+        reflection = SpiralReflection.objects.create(
             user=user,
             spiral=validated_data["spiral"],
             spiral_day=spiral_day,
             text_response=validated_data["text_response"]
         )
+
+        # Mark the day as completed
+        if not spiral_day.is_completed:
+            spiral_day.is_completed = True
+            spiral_day.save(update_fields=["is_completed"])
+
+        return reflection
