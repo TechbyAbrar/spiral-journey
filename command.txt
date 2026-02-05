@@ -1,0 +1,34 @@
+
+
+# Monitoring and run
+
+gunicorn core.asgi:application \
+  -k uvicorn.workers.UvicornWorker \
+  --workers 4 \
+  --bind 0.0.0.0:8002 \
+  --timeout 120 \
+  --graceful-timeout 120 \
+  --log-level info \
+  --access-logfile ./logs/gunicorn/access.log \
+  --error-logfile ./logs/gunicorn/error.log \
+  --daemon
+
+
+# live log Monitoring
+
+tail -f logs/gunicorn/error.log
+tail -f logs/gunicorn/access.log
+
+# kill gunicorn
+pkill gunicorn
+
+
+
+# check port listening
+
+ss -tulnp | grep 8002
+
+
+# hit server
+
+curl http://127.0.0.1:8002/
