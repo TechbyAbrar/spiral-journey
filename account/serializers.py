@@ -67,6 +67,7 @@ class SignupSerializer(serializers.ModelSerializer):
 
         # Send OTP email
         send_otp_email(user.email, user.otp)
+        print(f"[DEBUG] OTP email sent to {user.email} -- {user.otp}")
 
         return user
 

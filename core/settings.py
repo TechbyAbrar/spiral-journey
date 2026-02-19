@@ -30,7 +30,7 @@ environ.Env.read_env(BASE_DIR / ".env")  # read .env
 
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
+ALLOWED_HOSTS = ["148.230.100.100", "localhost", "127.0.0.1", "kuncihidupapp.cloud", "www.kuncihidupapp.cloud", "dashboard.kuncihidupapp.cloud", "api.kuncihidupapp.cloud", "srv1079572.hstgr.cloud"]
 
 
 # Application definition
@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     # Third-party
     "rest_framework",
     "corsheaders",
+    "drf_spectacular",
     "notification.apps.NotificationConfig",
     "account.apps.AccountConfig",  # ensure signals loaded
     
@@ -118,7 +119,16 @@ DATABASES = {
     )
 }
 
-
+# DATABASES = {
+#     'default': {
+#     'ENGINE': 'django.db.backends.postgresql',
+#     'NAME': 'backend_database',
+#     'USER': 'backend_user',
+#     'PASSWORD': 'user_password',
+#     'HOST': 'localhost',
+#     'PORT': '5432',
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -177,6 +187,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 from datetime import timedelta
@@ -202,14 +213,37 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 
 # Email Configuration
-EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
-EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
-EMAIL_PORT = env('EMAIL_PORT', cast=int, default=587)
-EMAIL_USE_TLS = env('EMAIL_USE_TLS', cast=bool, default=True)
-EMAIL_HOST_USER = env('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
+EMAIL_PORT = env.int("EMAIL_PORT", default=465)
+EMAIL_USE_SSL = env.bool("EMAIL_USE_SSL", default=True)
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=False)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
+# TEMPORARY - Disable SSL verification for Gmail
+import ssl
+import django.core.mail.backends.smtp
+
+_original_open = django.core.mail.backends.smtp.EmailBackend.open
+
+def _unverified_open(self):
+    if self.use_ssl or self.use_tls:
+        self.ssl_context = ssl._create_unverified_context()
+    return _original_open(self)
+
+django.core.mail.backends.smtp.EmailBackend.open = _unverified_open
+
+# brevo email configuration
+# EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
+# EMAIL_HOST = env("EMAIL_HOST", default="smtp-relay.brevo.com")
+# EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+# EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+# EMAIL_HOST_USER = env("EMAIL_HOST_USER")
+# EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
+# DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default=EMAIL_HOST_USER)
+# BREVO_API_KEY = env("BREVO_API_KEY")
 
 
 # Logging envuration
@@ -259,5 +293,17 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
+    },
+}
+
+
+# api docs spectacular settings
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Kunci Hidup API",
+    "DESCRIPTION": "API documentation for Kunci Hidup App",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SWAGGER_UI_SETTINGS": {
+        "persistAuthorization": True,
     },
 }

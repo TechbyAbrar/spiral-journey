@@ -32,3 +32,50 @@ ss -tulnp | grep 8002
 # hit server
 
 curl http://127.0.0.1:8002/
+
+
+
+# service file
+sudo nano /etc/systemd/system/gunicorn_uvicorn.service
+
+
+# group permission
+sudo chown -R backend_dev:backend_dev /home/backend_dev/project_backend/logs
+sudo chmod -R 775 /home/backend_dev/project_backend/logs
+
+
+# enable and start service
+
+sudo systemctl daemon-reload
+sudo systemctl enable gunicorn_uvicorn.service
+sudo systemctl restart gunicorn_uvicorn.service
+sudo systemctl status gunicorn_uvicorn.service
+
+
+# boot enable
+sudo systemctl enable gunicorn_uvicorn.service
+
+
+# If fails to start service -> check
+journalctl -u gunicorn_uvicorn.service -f
+
+
+# nginx setup
+sudo nano /etc/nginx/conf.d/backend.conf
+
+#check nginx
+sudo nginx -t
+
+
+sudo systemctl restart nginx
+sudo systemctl status nginx
+
+#enable boot
+sudo systemctl enable nginx
+
+#certbot version check
+certbot --version
+
+#check domain points to server
+ping yourdomain.com
+

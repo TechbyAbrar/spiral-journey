@@ -61,6 +61,45 @@ def send_otp_email(recipient_email: str, otp: str) -> None:
     except Exception as e:
         logger.exception(f"Error sending OTP email to {recipient_email}: {e}")
 
+# def send_otp_email(recipient_email: str, otp: str):
+#     url = "https://api.brevo.com/v3/smtp/email"
+
+#     headers = {
+#         "api-key": settings.BREVO_API_KEY,
+#         "Content-Type": "application/json",
+#         "accept": "application/json",
+#     }
+
+#     payload = {
+#         "sender": {
+#             "email": settings.DEFAULT_FROM_EMAIL,
+#             "name": "Kunchihidup",   # 👈 change this to your app/company name
+#         },
+#         "to": [
+#             {"email": recipient_email}
+#         ],
+#         "subject": "Verify Your Email",
+#         "htmlContent": f"""
+#             <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+#                 <h2>Email Verification</h2>
+#                 <p>Your One-Time Password (OTP) is:</p>
+#                 <h1 style="letter-spacing: 3px;">{otp}</h1>
+#                 <p>This code will expire in 5 minutes.</p>
+#                 <p>If you didn’t request this, you can safely ignore this email.</p>
+#                 <br/>
+#                 <p>— Kuncihidup Team</p>
+#             </div>
+#         """,
+#     }
+
+#     try:
+#         res = requests.post(url, json=payload, headers=headers, timeout=15)
+#         res.raise_for_status()
+#         logger.info(f"OTP email sent to {recipient_email} via Brevo")
+#     except requests.RequestException as e:
+#         logger.exception(f"Failed to send OTP email to {recipient_email}: {e}")
+#         raise
+
 
 # ---------------------------
 # Token Utilities
